@@ -121,6 +121,10 @@ async def main_middleware(request: Request, call_next):
 
     # 데이터베이스 설치여부 체크
     db_connect = DBConnect()
+    print("-----")
+    print(db_connect.engine.pool.status())  # db pool의 현재 상태 보는 방법
+    print("-----")
+
     db = db_connect.sessionLocal()
     url_path = request.url.path
 

@@ -2,7 +2,7 @@ import os
 
 from dotenv import dotenv_values, load_dotenv
 from fastapi import Depends
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import QueuePool
@@ -110,12 +110,17 @@ class DBConnect(DBSetting):
         self._sessionLocal = sessionLocal
 
     def create_engine(self) -> None:
+        temp_engine = create_engine(self._url)
+        with temp_engine.connect() as conn:
+            result = conn.execute(text("SHOW GLOBAL VARIABLES LIKE 'wait_timeout';"))
+            db_wait_timeout = result.fetchone()
+            adjusted_pool_timeout = int(db_wait_timeout[1]) - 1
         self.engine = create_engine(
             self._url,
             poolclass=QueuePool,
-            pool_size=20,
-            max_overflow=40,
-            pool_timeout=60
+            pool_size=1,
+            max_overflow=1,
+            pool_timeout=adjusted_pool_timeout,
         )
 
         self.create_sessionmaker()
