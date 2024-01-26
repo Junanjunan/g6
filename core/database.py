@@ -5,7 +5,8 @@ from fastapi import Depends
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import QueuePool
+from sqlalchemy.pool import QueuePool, NullPool
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from typing_extensions import Annotated
 
 
@@ -27,7 +28,8 @@ class DBSetting:
     supported_engines = {
         "mysql": "mysql+pymysql://",
         "postgresql": "postgresql://",
-        "sqlite": "sqlite:///sqlite3.db"
+        "sqlite": "sqlite:///sqlite3.db",
+        "aiomysql": "mysql+aiomysql://",
     }
 
     def __init__(self) -> None:
@@ -112,10 +114,13 @@ class DBConnect(DBSetting):
     def create_engine(self) -> None:
         self.engine = create_engine(
             self._url,
-            poolclass=QueuePool,
-            pool_size=20,
-            max_overflow=40,
-            pool_timeout=60
+            # poolclass=QueuePool,
+            poolclass=NullPool,
+            # pool_size=20,
+            # max_overflow=40,
+            # pool_timeout=15,
+            # pool_pre_ping=True,
+            # pool_recycle=True
         )
 
         self.create_sessionmaker()
@@ -123,12 +128,26 @@ class DBConnect(DBSetting):
     def create_sessionmaker(self) -> None:
         self._sessionLocal = sessionmaker(autocommit=False, autoflush=False,
                                           bind=self.engine, expire_on_commit=True)
+        
+    def create_async_engine(self):
+        self.engine = create_async_engine(
+            self._url,
+            poolclass=NullPool,
+        )
+
+        self.create_async_sessionmaker()
+
+
+    def create_async_sessionmaker(self):
+        self._sessionLocal = sessionmaker(
+            bind=self.engine, expire_on_commit=True, class_=AsyncSession)
 
 
 db_connect = DBConnect()
 # 데이터베이스 url이 없을 경우, 설치를 위해 임시로 메모리 DB 사용
 db_connect.url = db_connect.url or "sqlite://"
 db_connect.create_engine()
+# db_connect.create_async_engine()
 
 
 # 데이터베이스 세션을 가져오는 의존성 함수

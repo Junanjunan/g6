@@ -176,7 +176,8 @@ async def list_post(
     for write in writes:
         write.num = total_count - offset - (writes.index(write))
         write = get_list(request, write, board_config)
-
+    engine = db.bind
+    engine.dispose()
     context = {
         "request": request,
         "categories": board_config.get_category_list(),

@@ -123,12 +123,14 @@ async def main_middleware(request: Request, call_next):
     db_connect = DBConnect()
     db = db_connect.sessionLocal()
     url_path = request.url.path
+    print("pool_status:", db_connect.engine.pool.status())  # db pool의 현재 상태 보는 방법
 
     try:
         if not url_path.startswith("/install"):
             if not os.path.exists(ENV_PATH):
                 raise AlertException(".env 파일이 없습니다. 설치를 진행해 주세요.", 400, "/install")
-
+            print("connect():", db_connect.engine.pool.connect())
+            print("connect().connection.open:", db_connect.engine.pool.connect().connection.open)
             if not inspect(db_connect.engine).has_table(db_connect.table_prefix + "config"):
                 raise AlertException("DB 또는 테이블이 존재하지 않습니다. 설치를 진행해 주세요.", 400, "/install")
         else:
@@ -259,7 +261,7 @@ async def main_middleware(request: Request, call_next):
 regist_core_middleware(app)
 
 # 기본 예외처리 핸들러를 등록하는 함수
-regist_core_exception_handler(app)
+# regist_core_exception_handler(app)
 
 
 # 예약 작업을 관리할 스케줄러 생성

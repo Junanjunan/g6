@@ -26,12 +26,12 @@ __all__ = [
 ]
 
 
-with DBConnect().sessionLocal() as db:
-    # 설치되기 전에는 config 테이블이 없으므로 확인.
-    if inspect(DBConnect().engine).has_table(DBConnect().table_prefix + "config"):
-        try:
-            config = db.scalar(select(Config))
-            # 서버시작시 소셜로그인 설정을 불러온다.
-            register_social_provider(config)
-        except Exception as e:
-            logging.warning("소셜로그인 설정을 불러올 수 없습니다. " + str(e.args[0]))
+# with DBConnect().sessionLocal() as db:
+#     # 설치되기 전에는 config 테이블이 없으므로 확인.
+#     if inspect(DBConnect().engine).has_table(DBConnect().table_prefix + "config"):
+#         try:
+#             config = db.scalar(select(Config))
+#             # 서버시작시 소셜로그인 설정을 불러온다.
+#             register_social_provider(config)
+#         except Exception as e:
+#             logging.warning("소셜로그인 설정을 불러올 수 없습니다. " + str(e.args[0]))
