@@ -17,8 +17,51 @@ from lib.dependencies import (
 )
 from lib.template_filters import number_format, search_font
 from lib.template_functions import get_paging
-from lib.html_sanitizers import SubjectSanitizer, ContentSanitizer
+# from lib.html_sanitizers import SubjectSanitizer, ContentSanitizer
+from lxml.html.clean import Cleaner, clean
+from lxml.html.defs import safe_attrs
+import inspect
 
+
+
+
+allowed_tags_dict = {
+    'text': ['em', 'i', 'b', 'u', 'small', 'mark', 'del', 'ins', 'sub', 'sup'],
+    'h_tags': ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+    'list': ['ul', 'ol', 'li', 'dl', 'dt', 'dd'],
+    'table': ['table', 'th', 'tr', 'td', 'thead', 'tbody', 'tfoot', 'caption', 'col', 'colgroup'],
+    # 'block': ['div', 'main', 'section', 'article', 'aside', 'nav'],
+    'formatting': ['blockquote', 'hr', 'br'],
+    'media': ['img', 'audio', 'video', 'source', 'track'],
+    'link': ['a'],
+}
+
+allowed_attrs = {
+    '*': ['style', 'class', 'id', 'title'],
+    'a': ['href', 'title', 'accesskey', 'class', 'dir', 'id', 'lang', 'name', 'rel', 'tabindex', 'type', 'target'],
+    'table': ['border', 'cellspacing', 'cellpadding', 'align', 'bgcolor', 'summary'],
+    'th': ['scope'],
+    'img': ['src', 'alt', 'title', 'width', 'height', 'align'],
+}
+
+allowed_tags = {tag for tags in allowed_tags_dict.values() for tag in tags}
+# allowed_attrs = {attr for attrs in allowed_attrs.values() for attr in attrs}.union(safe_attrs)
+# allowed_attrs = {attr for attrs in allowed_attrs.values() for attr in attrs}
+
+
+def get_cleaned_data(data):
+    cleaner = Cleaner(
+        allow_tags=allowed_tags,
+        safe_attrs=allowed_attrs,
+        safe_attrs_only=True,
+        remove_unknown_tags=True,
+    )
+    # cleaner = clean
+    # cleaner.allow_tags=allowed_tags,
+    # cleaner.remove_unknown_tags=False,
+    # # cleaner.safe_attrs=allowed_attrs,
+    # # cleaner.safe_attrs_only=True,
+    return cleaner.clean_html(data)
 
 router = APIRouter()
 templates = UserTemplates()
@@ -242,8 +285,14 @@ async def qa_write_update(
         raise AlertException(f"제목/내용에 금지단어({word})가 포함되어 있습니다.", 400)
     
     # Stored XSS 방지
-    form_data.qa_subject = SubjectSanitizer().get_uniformed_cleaned_data(form_data.qa_subject)
-    form_data.qa_content = ContentSanitizer().get_uniformed_cleaned_data(form_data.qa_content)
+    print("---")
+    print(form_data.qa_subject)
+    form_data.qa_subject = get_cleaned_data(form_data.qa_subject)
+    print(form_data.qa_subject)
+    form_data.qa_content = get_cleaned_data(form_data.qa_content)
+    print("*************")
+    print(inspect.getfile(Cleaner))
+    print("*************")
     # Q&A 업로드파일 크기 검증
     if not request.state.is_super_admin:
         if file1.size > 0 and file1.size > qa_config.qa_upload_size:

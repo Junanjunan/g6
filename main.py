@@ -253,7 +253,7 @@ async def main_middleware(request: Request, call_next):
         print(e)
 
     db.close()
-
+    response.headers['Content-Security-Policy'] = "default-src 'self' 'unsafe-inline' https://*;"
     return response
 
 # 기본 실행할 미들웨어를 추가하는 함수
