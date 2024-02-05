@@ -37,7 +37,7 @@ load_dotenv()
 APP_IS_DEBUG = TypeAdapter(bool).validate_python(os.getenv("APP_IS_DEBUG", False))
 
 # APP_IS_DEBUG 값이 True일 경우, 디버그 모드가 활성화됩니다.
-app = FastAPI(debug=APP_IS_DEBUG)
+app = FastAPI(debug=APP_IS_DEBUG, root_path="/div")
 
 templates = UserTemplates()
 templates.env.filters["default_if_none"] = default_if_none
