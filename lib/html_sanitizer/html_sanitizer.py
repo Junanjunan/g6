@@ -1,11 +1,20 @@
 import abc
 from copy import deepcopy
 from typing import Dict, Set
-from lxml.html import fromstring, tostring
+import lxml.html
 from lxml.html.clean import Cleaner
 from lxml.html.defs import safe_attrs
 from core.exception import AlertException
 from .allowed_dict import *
+
+
+original_tostring = lxml.html.tostring
+
+def custom_tostring(*args, **kwargs):
+    kwargs['with_tail'] = False
+    return original_tostring(*args, **kwargs)
+
+lxml.html.tostring = custom_tostring
 
 
 class CustomCleaner(Cleaner):
@@ -14,22 +23,6 @@ class CustomCleaner(Cleaner):
         html_string = html_string[5:-6]
         return html_string
 
-    def transform_result(self, result_type, result, with_tail=False):
-        if issubclass(result_type, bytes):
-            result = tostring(result, encoding='utf-8', with_tail=with_tail)
-        elif issubclass(result_type, str):
-            result = tostring(result, encoding='unicode', with_tail=with_tail)
-        return self.strip_outer_div_tag(result)
-
-    def clean_html(self, html):
-        html = f'<div>{html}</div>'
-        result_type = type(html)
-        if isinstance(html, (str, bytes)):
-            doc = fromstring(html)
-        else:
-            doc = deepcopy(html)
-        self(doc)
-        return self.transform_result(result_type, doc)
 
 
 class BaseSanitizer(metaclass=abc.ABCMeta):
@@ -85,7 +78,9 @@ class SubjectSanitizer(BaseSanitizer):
         self.cleaner.safe_attrs = {attr for attrs in combined_attrs.values() for attr in attrs}
     
     def get_cleaned_data(self, html_content: str) -> str:
+        html_content = f'<div>{html_content}</div>'
         cleaned_html = self.cleaner.clean_html(html_content)
+        cleaned_html = self.cleaner.strip_outer_div_tag(cleaned_html)
 
         if not cleaned_html:
             raise AlertException("허용되지 않는 HTML 태그들을 변경후 제목을 다시 작성해주세요.", 400)
@@ -106,5 +101,7 @@ class ContentSanitizer(BaseSanitizer):
         self.cleaner.safe_attrs = {attr for attrs in combined_attrs.values() for attr in attrs}
 
     def get_cleaned_data(self, html_content: str) -> str:
+        html_content = f'<div>{html_content}</div>'
         html_content = self.cleaner.clean_html(html_content)
+        html_content = self.cleaner.strip_outer_div_tag(html_content)
         return html_content
