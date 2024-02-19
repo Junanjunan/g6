@@ -64,7 +64,7 @@ async def poll_list_delete(
     db.execute(delete(PollEtc).where(PollEtc.po_id.in_(checks)))
     db.commit()
 
-    url = "/admin/poll_list"
+    url = request.url_for("poll_list")
     query_params = request.query_params
     return RedirectResponse(set_url_query_params(url, query_params), 303)
 
@@ -125,6 +125,6 @@ async def poll_form_update(
     # 기존캐시 삭제
     lfu_cache.update({"poll": None})
 
-    url = f"/admin/poll_form/{poll.po_id}"
+    url = request.url_for("poll_form_edit", po_id=poll.po_id)
     query_params = request.query_params
     return RedirectResponse(set_url_query_params(url, query_params), 302)
