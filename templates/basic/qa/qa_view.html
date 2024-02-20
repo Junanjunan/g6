@@ -2,7 +2,7 @@
 {% import editor_macro(request) as editor %}
 
 {% block head %}
-    <script rel="stylesheet" src="/static/js/viewimageresize.js"></script>
+    <script src="{{ url_for('static', path='/js/viewimageresize.js') }}"></script>
     {{ editor.head() }}
 {% endblock head %}
 
