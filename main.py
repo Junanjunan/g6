@@ -8,7 +8,7 @@ from sqlalchemy import select, insert, inspect
 from starlette.staticfiles import StaticFiles
 
 import core.models as models
-from core.database import DBConnect, db_session
+from core.database import DBConnect, db_session, get_db
 from core.exception import (
     AlertException,
     regist_core_exception_handler,
@@ -294,17 +294,21 @@ async def index(request: Request, db: db_session):
             models.Board.bo_order
         )
     )
-    # 최고관리자가 아니라면 인증게시판 및 갤러리/공지사항 게시판은 제외
+    # # 최고관리자가 아니라면 인증게시판 및 갤러리/공지사항 게시판은 제외
     if not request.state.is_super_admin:
         query_boards = query_boards.where(
             models.Board.bo_use_cert == '',
             models.Board.bo_table.notin_(['notice', 'gallery'])
         )
     boards = db.scalars(query_boards).all()
+    visits = db.scalars(select(models.Visit)).all()
+    sam = []
+    for i in visits:
+        sam.append(i.vi_ip)
 
     context = {
         "request": request,
-        "newwins": get_newwins(request),
+        "newwins": get_newwins(request, db),
         "boards": boards,
     }
     return templates.TemplateResponse("/index.html", context)

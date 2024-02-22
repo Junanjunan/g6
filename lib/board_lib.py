@@ -1400,5 +1400,6 @@ def render_latest_posts(request: Request, skin_name: str = 'basic', bo_table: st
 
     # 캐시 파일 생성
     file_cache.create(temp_decode, cache_file)
+    db.close()
 
     return temp_decode

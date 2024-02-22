@@ -155,7 +155,8 @@ class DBConnect(DBSetting):
             poolclass=QueuePool,
             pool_size=20,
             max_overflow=40,
-            pool_timeout=60
+            pool_timeout=60,
+            pool_recycle=20,
         )
 
         self.create_sessionmaker()

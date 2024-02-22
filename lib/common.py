@@ -26,7 +26,7 @@ from sqlalchemy.exc import IntegrityError
 from starlette.datastructures import URL
 from user_agents import parse
 
-from core.database import DBConnect, MySQLCharsetMixin
+from core.database import DBConnect, MySQLCharsetMixin, db_session
 from core.models import (
     Auth, BoardNew, Config, Login, Member, Memo, Menu, NewWin, Poll, Popular,
     UniqId, Visit, VisitSum, WriteBaseModel
@@ -892,11 +892,11 @@ def is_none_datetime(input_date: Union[date, str]) -> bool:
     return False
 
 
-def get_newwins(request: Request):
+def get_newwins(request: Request, db: db_session):
     """
     레이어 팝업 목록 조회
     """
-    db = DBConnect().sessionLocal()
+    # db = DBConnect().sessionLocal()
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     current_division = "comm" # comm, both, shop
