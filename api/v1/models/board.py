@@ -60,6 +60,22 @@ class CommentModel(BaseModel):
         return self
 
 
+class VisitModel(BaseModel):
+    vi_id: int
+    vi_ip: str
+    vi_date: datetime
+    vi_referer: str
+    # vi_agent: str
+    # vi_browser: str
+    # vi_os: str
+    # vi_device: str
+
+    # model_config = ConfigDict(from_attributes=True)
+
+    class Config:
+        from_attributes = True
+
+
 class ResponseFileModel(BaseModel):
     """게시글 파일 모델중 response에 필요한 속성 정의"""
     bf_source: str

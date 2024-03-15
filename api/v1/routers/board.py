@@ -1,12 +1,12 @@
 import os
 from typing_extensions import Annotated, Dict, List
 
-from fastapi import APIRouter, Depends, Request, Path, Query, HTTPException, status, UploadFile, File, Form
+from fastapi import APIRouter, Depends, Request, Path, Query, HTTPException, status, UploadFile, File, Form, Body
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import asc, desc, func, select, update, exists, inspect, delete
 
 from core.database import db_session
-from core.models import Board, Group, BoardGood, Scrap, Member, BoardNew, WriteBaseModel
+from core.models import Board, Group, BoardGood, Scrap, Member, BoardNew, WriteBaseModel, Visit
 from lib.board_lib import (
     BoardConfig, get_list, write_search_filter, get_next_num, generate_reply_character,
     insert_board_new, send_write_mail, is_owner, BoardFileManager
@@ -23,7 +23,7 @@ from api.v1.dependencies.board import (
     validate_comment, validate_update_comment, validate_delete_comment,
     validate_upload_file_write, get_write, get_parent_write
 )
-from api.v1.models.board import WriteModel, CommentModel, ResponseWriteModel
+from api.v1.models.board import WriteModel, CommentModel, ResponseWriteModel, VisitModel
 from api.v1.lib.board import is_possible_level
 
 
@@ -34,6 +34,29 @@ credentials_exception = HTTPException(
     detail="Could not validate credentials",
     headers={"WWW-Authenticate": "Bearer"},
 )
+
+from datetime import datetime
+
+def get_visit(
+    db: db_session,
+):
+    visit1 = db.scalar(select(Visit))
+    visit2 = db.execute(select(Visit)).first()
+    visit3 = db.execute(select(Visit))
+    ins_db_class = Visit(vi_id=1, vi_ip="123", vi_date=datetime.now(), vi_referer='ㅎㅎㅎ', vi_agent='asdas')
+    ins_db_class = VisitModel.model_validate(ins_db_class)
+    # result = user_dto.model_dump_json()
+    result = ins_db_class
+    return result
+
+@router.get("/test",
+            # response_model = VisitModel
+            )
+async def test(
+    visit: Annotated[Visit, Depends(get_visit)],
+):
+    return visit
+
 
 @router.get("/group/{gr_id}",
             summary="게시판그룹 목록 조회",
@@ -295,6 +318,7 @@ async def api_create_post(
     wr_data: Annotated[WriteModel, Depends(validate_write)],
     board: Annotated[Board, Depends(get_board)],
     bo_table: str = Path(...),
+    test: str = Body
 ) -> Dict:
     """
     지정된 게시판에 새 글을 작성합니다.
