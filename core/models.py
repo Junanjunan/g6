@@ -434,7 +434,7 @@ class Group(Base):
 
     __tablename__ = DB_TABLE_PREFIX + "group"
 
-    gr_id = Column(String(10), primary_key=True, nullable=False)
+    gr_id = Column(String(10), primary_key=True, nullable=True)
     gr_subject = Column(String(255), nullable=False, default="")
     gr_device = Column(Enum("both", "pc", "mobile", name="gr_device"), nullable=False, default="both")
     gr_admin = Column(String(255), nullable=False, default="")
