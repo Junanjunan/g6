@@ -1,3 +1,5 @@
+import logging
+import inspect
 from typing import AsyncGenerator
 
 from fastapi import Depends
@@ -10,6 +12,46 @@ from sqlalchemy.pool import QueuePool
 from typing_extensions import Annotated
 
 from core.settings import settings
+
+
+# Configure logging
+logging.basicConfig(filename='database_connections.log', 
+                    level=logging.DEBUG, 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+
+def get_caller_info():
+    # Adjust the stack level if necessary based on your application structure
+    frame = inspect.stack()[3]
+    module = inspect.getmodule(frame[0])
+    filename = frame.filename
+    line_no = frame.lineno
+    function_name = frame.function
+    return f"{module.__name__}.{function_name} at {filename}:{line_no}"
+
+class MyCustomPool(QueuePool):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.connection_count = 0
+
+    def _create_connection(self):
+        conn = super()._create_connection()
+        self.connection_count += 1
+        caller_info = get_caller_info()
+        logger.debug(f"Connection created by {caller_info}. Total connections: {self.connection_count}")
+        return conn
+
+    def _return_conn(self, conn):
+        super()._return_conn(conn)
+        caller_info = get_caller_info()
+        logger.debug(f"Connection returned by {caller_info} to the pool. Total connections: {self.connection_count}")
+
+    def _close_connection(self, conn):
+        super()._close_connection(conn)
+        self.connection_count -= 1
+        caller_info = get_caller_info()
+        logger.debug(f"Connection closed by {caller_info}. Remaining connections: {self.connection_count}")
 
 
 class MySQLCharsetMixin:
@@ -153,7 +195,7 @@ class DBConnect(DBSetting):
     def create_engine(self) -> None:
         self.engine = create_engine(
             self._url,
-            poolclass=QueuePool,
+            poolclass=MyCustomPool,
             pool_size=20,
             max_overflow=40,
             pool_timeout=60
