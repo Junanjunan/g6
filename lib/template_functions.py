@@ -71,11 +71,10 @@ def get_group_select(id: str, selected: str = "", attribute: str = "") -> str:
     Returns:
         str: select 태그의 HTML 코드
     """
-    db = DBConnect().sessionLocal()
-    groups = db.scalars(
-        select(Group).order_by(Group.gr_order, Group.gr_id)
-    ).all()
-    db.close()
+    with DBConnect().sessionLocal() as db:
+        groups = db.scalars(
+            select(Group).order_by(Group.gr_order, Group.gr_id)
+        ).all()
 
     html_code = []
     html_code.append(f'<select id="{id}" name="{id}" {attribute}>\n')
@@ -102,13 +101,11 @@ def get_member_id_select(id: str, level: int, selected: str, attribute=""):
     Returns:
         _type_: _description_
     """
-    db = DBConnect().sessionLocal()
-    mb_ids = db.scalars(
-        select(Member.mb_id)
-        .where(Member.mb_level >= level)
-    ).all()
-    db.close()
-
+    with DBConnect().sessionLocal() as db:
+        mb_ids = db.scalars(
+            select(Member.mb_id)
+            .where(Member.mb_level >= level)
+        ).all()
     html_code = []
     html_code.append(f'<select id="{id}" name="{id}" {attribute}>')
     html_code.append('<option value="">선택하세요</option>')

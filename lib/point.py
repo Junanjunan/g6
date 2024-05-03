@@ -29,76 +29,75 @@ def insert_point(request: Request,
     Returns:
         int: 성공시 1, 실패시 0
     """
-    db = DBConnect().sessionLocal()
-    config = request.state.config
+    with DBConnect().sessionLocal() as db:
+        config = request.state.config
 
-    # 포인트를 사용하지 않는다면 종료
-    if not config.cf_use_point:
-        return 0
+        # 포인트를 사용하지 않는다면 종료
+        if not config.cf_use_point:
+            return 0
 
-    # 포인트가 없다면 업데이트를 할 필요가 없으므로 종료
-    if point == 0:
-        return 0
+        # 포인트가 없다면 업데이트를 할 필요가 없으므로 종료
+        if point == 0:
+            return 0
 
-    # 회원아이디가 없다면 종료
-    if mb_id == '':
-        return 0
+        # 회원아이디가 없다면 종료
+        if mb_id == '':
+            return 0
 
-    # 회원정보가 없다면 종료
-    member = db.scalar(select(Member).filter_by(mb_id=mb_id))
-    if not member:
-        return 0
+        # 회원정보가 없다면 종료
+        member = db.scalar(select(Member).filter_by(mb_id=mb_id))
+        if not member:
+            return 0
 
-    if rel_table or rel_id or rel_action:
-        existing_point = db.scalar(
-            exists(Point.po_id)
-            .where(
-                Point.mb_id == mb_id,
-                Point.po_rel_table == rel_table,
-                Point.po_rel_id == str(rel_id),
-                Point.po_rel_action == rel_action
+        if rel_table or rel_id or rel_action:
+            existing_point = db.scalar(
+                exists(Point.po_id)
+                .where(
+                    Point.mb_id == mb_id,
+                    Point.po_rel_table == rel_table,
+                    Point.po_rel_id == str(rel_id),
+                    Point.po_rel_action == rel_action
+                )
+                .select()
             )
-            .select()
+            if existing_point:
+                return -1
+
+        # 포인트 건별 생성
+        current_time = datetime.now()
+        po_expire_date = datetime.strptime('9999-12-31', '%Y-%m-%d')
+        if config.cf_point_term > 0:
+            expire_days = expire if expire > 0 else config.cf_point_term
+            after_datetime = timedelta(days=expire_days - 1)
+            po_expire_date = (current_time + after_datetime).strftime('%Y-%m-%d')
+
+        mb_point = get_point_sum(request, mb_id)
+        po_expired = 0
+        if point < 0:
+            po_expired = 1
+            po_expire_date = current_time
+        po_mb_point = mb_point + point
+
+        new_point = Point(
+            mb_id=mb_id,
+            po_datetime=current_time,
+            po_content=content,
+            po_point=point,
+            po_use_point=0,
+            po_mb_point=po_mb_point,
+            po_expired=po_expired,
+            po_expire_date=po_expire_date,
+            po_rel_table=rel_table,
+            po_rel_id=str(rel_id),
+            po_rel_action=rel_action
         )
-        if existing_point:
-            return -1
+        db.add(new_point)
 
-    # 포인트 건별 생성
-    current_time = datetime.now()
-    po_expire_date = datetime.strptime('9999-12-31', '%Y-%m-%d')
-    if config.cf_point_term > 0:
-        expire_days = expire if expire > 0 else config.cf_point_term
-        after_datetime = timedelta(days=expire_days - 1)
-        po_expire_date = (current_time + after_datetime).strftime('%Y-%m-%d')
-
-    mb_point = get_point_sum(request, mb_id)
-    po_expired = 0
-    if point < 0:
-        po_expired = 1
-        po_expire_date = current_time
-    po_mb_point = mb_point + point
-
-    new_point = Point(
-        mb_id=mb_id,
-        po_datetime=current_time,
-        po_content=content,
-        po_point=point,
-        po_use_point=0,
-        po_mb_point=po_mb_point,
-        po_expired=po_expired,
-        po_expire_date=po_expire_date,
-        po_rel_table=rel_table,
-        po_rel_id=str(rel_id),
-        po_rel_action=rel_action
-    )
-    db.add(new_point)
-
-    db.execute(
-        update(Member).values(mb_point=po_mb_point)
-        .where(Member.mb_id == mb_id)
-    )
-    db.commit()
-    db.close()
+        db.execute(
+            update(Member).values(mb_point=po_mb_point)
+            .where(Member.mb_id == mb_id)
+        )
+        db.commit()
 
     return 1
 

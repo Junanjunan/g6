@@ -625,63 +625,61 @@ def delete_old_records():
     """
     설정일이 지난 데이터를 삭제
     """
-    try:
-        db = DBConnect().sessionLocal()
-        config = db.scalar(select(Config))
-        today = datetime.now()
+    with DBConnect().sessionLocal() as db:
+        try:
+            config = db.scalar(select(Config))
+            today = datetime.now()
 
-        # 방문자 기록 삭제
-        if config.cf_visit_del > 0:
-            base_date = today - timedelta(days=config.cf_visit_del)
-            if db.bind.dialect.name == "sqlite":
-                visit_datetime = Visit.vi_date.concat(" ").concat(Visit.vi_time)
-                concat_expr = func.strftime("%Y-%m-%d %H:%M:%S", visit_datetime)
-            else:
-                concat_expr = func.cast(func.concat(Visit.vi_date, " ", Visit.vi_time), DateTime)
-            result = db.execute(
-                delete(Visit).where(concat_expr < base_date)
-            )
-            print("방문자기록 삭제 기준일 : ", base_date, f"{result.rowcount}건 삭제")
+            # 방문자 기록 삭제
+            if config.cf_visit_del > 0:
+                base_date = today - timedelta(days=config.cf_visit_del)
+                if db.bind.dialect.name == "sqlite":
+                    visit_datetime = Visit.vi_date.concat(" ").concat(Visit.vi_time)
+                    concat_expr = func.strftime("%Y-%m-%d %H:%M:%S", visit_datetime)
+                else:
+                    concat_expr = func.cast(func.concat(Visit.vi_date, " ", Visit.vi_time), DateTime)
+                result = db.execute(
+                    delete(Visit).where(concat_expr < base_date)
+                )
+                print("방문자기록 삭제 기준일 : ", base_date, f"{result.rowcount}건 삭제")
 
-        # 인기검색어 삭제
-        if config.cf_popular_del > 0:
-            from service.popular_service import PopularService
+            # 인기검색어 삭제
+            if config.cf_popular_del > 0:
+                from service.popular_service import PopularService
 
-            base_date = today - timedelta(days=config.cf_popular_del)
-            popular_service = PopularService(db)
-            delete_count = popular_service.delete_populars(base_date.date())
+                base_date = today - timedelta(days=config.cf_popular_del)
+                popular_service = PopularService(db)
+                delete_count = popular_service.delete_populars(base_date.date())
 
-            print("인기검색어 삭제 기준일 : ", base_date, f"{delete_count}건 삭제")
+                print("인기검색어 삭제 기준일 : ", base_date, f"{delete_count}건 삭제")
 
-        # 최근게시물 삭제
-        if config.cf_new_del > 0:
-            base_date = today - timedelta(days=config.cf_new_del)
-            result = db.execute(
-                delete(BoardNew).where((BoardNew.bn_datetime != None) & (BoardNew.bn_datetime < base_date))
-            )
-            print("최근게시물 삭제 기준일 : ", base_date, f"{result.rowcount}건 삭제")
+            # 최근게시물 삭제
+            if config.cf_new_del > 0:
+                base_date = today - timedelta(days=config.cf_new_del)
+                result = db.execute(
+                    delete(BoardNew).where((BoardNew.bn_datetime != None) & (BoardNew.bn_datetime < base_date))
+                )
+                print("최근게시물 삭제 기준일 : ", base_date, f"{result.rowcount}건 삭제")
 
-        # 쪽지 삭제
-        if config.cf_memo_del > 0:
-            base_date = today - timedelta(days=config.cf_memo_del)
-            result = db.execute(
-                delete(Memo).where(Memo.me_send_datetime < base_date)
-            )
-            print("쪽지 삭제 기준일 : ", base_date, f"{result.rowcount}건 삭제")
+            # 쪽지 삭제
+            if config.cf_memo_del > 0:
+                base_date = today - timedelta(days=config.cf_memo_del)
+                result = db.execute(
+                    delete(Memo).where(Memo.me_send_datetime < base_date)
+                )
+                print("쪽지 삭제 기준일 : ", base_date, f"{result.rowcount}건 삭제")
 
-        # 탈퇴회원 자동 삭제
-        if config.cf_leave_day > 0:
-            # TODO: 회원삭제 처리 추가
-            # query = update(Member).where(Member.mb_leave_date < datetime.now() - timedelta(days=config.cf_leave_day))
-            # data = {}
-            # result = db.execute(query, data)
-            # print("회원 삭제 기준일 : ", datetime.now() - timedelta(days=config.cf_leave_day), f"{result}건 삭제")
-            pass
-        db.commit()
-    except Exception as e:
-        print(e)
-    finally:
-        db.close()
+            # 탈퇴회원 자동 삭제
+            if config.cf_leave_day > 0:
+                # TODO: 회원삭제 처리 추가
+                # query = update(Member).where(Member.mb_leave_date < datetime.now() - timedelta(days=config.cf_leave_day))
+                # data = {}
+                # result = db.execute(query, data)
+                # print("회원 삭제 기준일 : ", datetime.now() - timedelta(days=config.cf_leave_day), f"{result}건 삭제")
+                pass
+            db.commit()
+        except Exception as e:
+            print(e)
 
 
 def is_possible_ip(request: Request, ip: str) -> bool:

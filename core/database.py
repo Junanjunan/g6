@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine, URL
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, sessionmaker, scoped_session
 from sqlalchemy.pool import QueuePool
 from typing_extensions import Annotated
 
@@ -22,13 +22,12 @@ logger = logging.getLogger(__name__)
 
 
 def get_caller_info():
-    # Adjust the stack level if necessary based on your application structure
-    frame = inspect.stack()[3]
-    module = inspect.getmodule(frame[0])
-    filename = frame.filename
-    line_no = frame.lineno
-    function_name = frame.function
-    return f"{module.__name__}.{function_name} at {filename}:{line_no}"
+    # Loop over the stack to find the first caller outside this utility function
+    for frame_info in inspect.stack():
+        if frame_info.function not in ["get_caller_info", "_create_connection", "_return_conn", "_close_connection"]:
+            # Extracting file name, line number, and function name
+            return f"{frame_info.filename}:{frame_info.lineno} - {frame_info.function}"
+    return "Unknown caller"  # Default case if no relevant caller is found
 
 class MyCustomPool(QueuePool):
     def __init__(self, *args, **kwargs):
@@ -162,7 +161,7 @@ class DBConnect(DBSetting):
     - 싱글톤 패턴 구현 (단일 engine 및 session 유지)
     """
     _engine: Annotated[Engine, None]
-    _sessionLocal: Annotated[sessionmaker[Session], None]
+    _sessionLocal: Annotated[scoped_session[sessionmaker[Session]], None]
     _instance: Annotated['DBConnect', None] = None
 
     def __new__(cls):
@@ -195,10 +194,12 @@ class DBConnect(DBSetting):
     def create_engine(self) -> None:
         self.engine = create_engine(
             self._url,
-            poolclass=MyCustomPool,
+            poolclass=QueuePool,
             pool_size=20,
-            max_overflow=40,
-            pool_timeout=60
+            max_overflow=0,
+            pool_timeout=60,
+            pool_pre_ping=True,
+            pool_recycle=1,
         )
 
         self.create_sessionmaker()
@@ -216,11 +217,8 @@ db_connect.create_engine()
 
 # 데이터베이스 세션을 가져오는 의존성 함수
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    db = DBConnect().sessionLocal()
-    try:
+    with DBConnect().sessionLocal() as db:
         yield db
-    finally:
-        db.close()
 
 
 # Annotated를 사용하여 의존성 주입
