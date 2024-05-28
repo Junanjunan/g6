@@ -83,7 +83,7 @@ async def api_read_post(
     })
     content.update(additional_content)
     service.validate_secret()
-    service.validate_repeat()
+    service.validate_repeat_with_slowapi()
     service.block_read_comment()
     service.validate_read_level()
     service.check_scrap()
@@ -122,7 +122,7 @@ async def api_read_post(
         "nogood": ajax_good_data["nogood"],
     })
     content.update(additional_content)
-    service.validate_repeat()
+    service.validate_repeat_with_slowapi()
     service.block_read_comment()
     service.check_scrap()
     service.check_is_good()
