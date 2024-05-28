@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from fastapi.encoders import jsonable_encoder
 
 from core.database import db_session
-from lib.slowapi.limiter import validate_slowapi_create_post
+from lib.slowapi.create_post_limit.limiter import validate_slowapi_create_post
 from lib.board_lib import insert_board_new
 from api.v1.models.response import (
     response_401, response_403, response_404, response_422,
