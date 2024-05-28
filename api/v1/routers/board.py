@@ -6,7 +6,6 @@ from fastapi.responses import FileResponse
 from fastapi.encoders import jsonable_encoder
 
 from core.database import db_session
-from lib.slowapi.create_post_limit.limiter import validate_slowapi_create_post
 from lib.board_lib import insert_board_new
 from api.v1.models.response import (
     response_401, response_403, response_404, response_422,
@@ -167,7 +166,7 @@ async def api_create_post(
     service.validate_post_content(wr_data.wr_content)
     service.validate_write_level()
     service.arrange_data(wr_data, wr_data.secret, wr_data.html, wr_data.mail)
-    validate_slowapi_create_post(service.request)
+    service.validate_write_delay_with_slowapi()
     write = service.save_write(wr_data.parent_id, wr_data)
     insert_board_new(service.bo_table, write)
     service.add_point(write)
@@ -375,7 +374,7 @@ async def api_create_comment(
     service.validate_comment_level()
     service.validate_point()
     service.validate_post_content(comment_data.wr_content)
-    validate_slowapi_create_post(service.request)
+    service.validate_write_delay_with_slowapi()
     comment = service.save_comment(comment_data, parent_write)
     service.add_point(comment)
     service.send_write_mail_(comment, parent_write)
