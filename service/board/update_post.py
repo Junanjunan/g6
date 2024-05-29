@@ -120,7 +120,7 @@ class CommentService(UpdatePostService):
             self.raise_exception(detail=f"{comment_id} : 존재하지 않는 댓글입니다.", status_code=404)
         return parent_comment
 
-    def validate_write_comment_paring(self, wr_parent: int):
+    def validate_write_comment_pairing(self, wr_parent: int):
         """댓글과 게시글의 연관성 검증"""
         if self.wr_id != wr_parent:
             self.raise_exception(detail="작성하려는 대댓글의 댓글이, 부모글의 댓글이 아닙니다.", status_code=403)
@@ -134,7 +134,7 @@ class CommentService(UpdatePostService):
         if data.comment_id:
             # 해당 생성 댓글이 대댓글(댓글의 댓글)인 경우의 로직
             parent_comment = self.get_parent_comment(data.comment_id)
-            self.validate_write_comment_paring(parent_comment.wr_parent)
+            self.validate_write_comment_pairing(parent_comment.wr_parent)
             comment.wr_comment_reply = generate_reply_character(self.board, parent_comment)
             comment.wr_comment = parent_comment.wr_comment
         else:
