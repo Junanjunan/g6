@@ -162,6 +162,14 @@ async def install(
         raise AlertException(f"설치가 실패했습니다.\\n{e}")
 
 
+def modify_table_names(meta, prefix):
+    # Iterate through all tables and modify the table name and columns
+    for table in meta.tables.values():
+        original_table_name = table.name
+        new_table_name = original_table_name.replace('g6_', prefix)
+        table.name = new_table_name
+
+
 @router.get("/process", dependencies=[Depends(validate_token)])
 async def install_process(request: Request):
     async def install_event():
@@ -185,6 +193,7 @@ async def install_process(request: Request):
 
                 yield "기존 데이터베이스 테이블 삭제 완료"
 
+            modify_table_names(models.Base.metadata, form_data.db_table_prefix)
             models.Base.metadata.create_all(bind=engine)
             yield "데이터베이스 테이블 생성 완료"
 
