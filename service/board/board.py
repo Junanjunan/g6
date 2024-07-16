@@ -283,8 +283,7 @@ class BoardService(BaseService, BoardConfig):
         # for file in file_list:
         #     if getattr(file, "size", None):
         #         files.append(file)
-
-        is_not_same_mb_id = self.member.mb_id and self.member.mb_id != write.mb_id
+        is_not_same_mb_id = (self.member.mb_id != write.mb_id)
 
         if not self.member.admin_type and is_not_same_mb_id and not password_verified:
             self.raise_exception(status_code=403, detail="자신의 글에만 파일을 업로드할 수 있습니다.")
