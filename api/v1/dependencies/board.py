@@ -43,10 +43,12 @@ def arange_file_data(
     file_content2: Annotated[str, Form(title="첨부파일2 내용")] = None,
     file_del1: Annotated[int, Form(title="첨부파일1 삭제 여부")] = None,
     file_del2: Annotated[int, Form(title="첨부파일2 삭제 여부")] = None,
+    wr_password: Annotated[str, Form(title="비밀번호")] = None,
 ) -> dict:
     """업로드 파일의 데이터를 딕셔너리 형태로 반환합니다."""
     return {
         "files": [file1, file2],
         "file_contents": [file_content1, file_content2],
         "file_dels": [file_del1, file_del2],
+        "wr_password": wr_password,
     }

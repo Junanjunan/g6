@@ -25,6 +25,7 @@ from api.v1.service.board import (
     DeletePostServiceAPI, CommentServiceAPI, DeleteCommentServiceAPI,
     MoveUpdateServiceAPI, ListDeleteServiceAPI
 )
+from lib.pbkdf2 import validate_password
 from service.board_file_service import BoardFileService
 from service.ajax import AJAXService
 
@@ -373,8 +374,14 @@ async def api_upload_file(
     - multipart/form-data로 전송해야 합니다.
     """
     write = service.get_write(wr_id)
+    password_verified = validate_password(data["wr_password"], write.wr_password) if data["wr_password"] else False
     service.upload_files(
-        file_service, write, data["files"], data["file_contents"], data["file_dels"]
+        file_service,
+        write,
+        data["files"],
+        data["file_contents"],
+        data["file_dels"],
+        password_verified
     )
     return {"result": "uploaded"}
 
