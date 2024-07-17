@@ -118,6 +118,25 @@ async def api_read_post(
     return content
 
 
+@router.post("/{bo_table}/writes/delete",
+            summary="게시글 일괄 삭제",
+            responses={**response_401, **response_403, **response_422}
+            )
+async def api_list_delete(
+    service: Annotated[ListDeleteServiceAPI, Depends()],
+    wr_ids: Annotated[List[int], Body(...)],
+) -> ResponseNormalModel:
+    """
+    게시글을 일괄 삭제합니다.
+
+    ### Request Body
+    - **wr_ids**: 삭제할 게시글 wr_id 리스트 (예: [1, 2, 3])
+    """
+    service.validate_admin_authority()
+    service.delete_writes(wr_ids)
+    return {"result": "deleted"}
+
+
 @router.post("/{bo_table}/writes/{wr_id}",
             summary="게시판 개별 글 조회(비밀글)",
             responses={**response_401, **response_403,
@@ -278,23 +297,7 @@ async def api_delete_post(
     return {"result": "deleted"}
 
 
-@router.post("/{bo_table}/writes/delete",
-            summary="게시글 일괄 삭제",
-            responses={**response_401, **response_403, **response_422}
-            )
-async def api_list_delete(
-    service: Annotated[ListDeleteServiceAPI, Depends()],
-    wr_ids: Annotated[List[int], Body(...)],
-) -> ResponseNormalModel:
-    """
-    게시글을 일괄 삭제합니다.
 
-    ### Request Body
-    - **wr_ids**: 삭제할 게시글 wr_id 리스트 (예: [1, 2, 3])
-    """
-    service.validate_admin_authority()
-    service.delete_writes(wr_ids)
-    return {"result": "deleted"}
 
 
 @router.post("/{bo_table}/writes/{wr_id}/delete",
