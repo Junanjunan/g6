@@ -91,6 +91,7 @@ class ResponseFileModel(BaseModel):
     bf_download: int
     bf_datetime: datetime
     bf_file: str
+    bf_no: int
 
 
 class ResponseCommentModel(BaseModel):
