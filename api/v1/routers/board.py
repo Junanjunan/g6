@@ -421,7 +421,7 @@ async def api_create_comment(
     comment_data: CommentModel,
     bo_table: str = Path(..., title="게시판 테이블명", description="게시판 테이블명"),
     wr_id: int = Path(..., title="부모글 아이디", description="부모글 아이디"),
-) -> ResponseNormalModel:
+) -> ResponseCreateWriteModel:
     """
     댓글 등록
 
@@ -445,7 +445,7 @@ async def api_create_comment(
     service.send_write_mail_(comment, parent_write)
     insert_board_new(bo_table, comment)
     db.commit()
-    return {"result": "created"}
+    return {"result": "created", "wr_id": comment.wr_id}
 
 
 @router.put("/{bo_table}/writes/{wr_id}/comments",
