@@ -39,6 +39,19 @@ credentials_exception = HTTPException(
 )
 
 
+@router.get("/{bo_table}/config",
+            summary="게시판 설정 조회",
+            responses={**response_401, **response_422}
+            )
+async def api_board_config(
+    service: Annotated[CreatePostServiceAPI, Depends(CreatePostServiceAPI.async_init)]
+):
+    """
+    게시판 설정을 조회합니다.
+    """
+    return service.board
+
+
 @router.get("/{bo_table}/writes",
             summary="게시판 조회",
             responses={**response_401, **response_422}
